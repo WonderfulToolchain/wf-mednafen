@@ -488,6 +488,36 @@ static void GetAddressSpaceBytes(const char *name, uint32 Address, uint32 Length
    Buffer++;
   }
  }
+ else if(!strcmp(name, "sram") && sram_size)
+ {
+  while(Length--)
+  {
+   Address &= sram_size - 1;
+   *Buffer = wsSRAM[Address];
+   Address++;
+   Buffer++;
+  }
+ }
+ else if(!strcmp(name, "eeprom") && eeprom_size)
+ {
+  while(Length--)
+  {
+   Address &= eeprom_size - 1;
+   *Buffer = wsEEPROM[Address];
+   Address++;
+   Buffer++;
+  }
+ }
+ else if(!strcmp(name, "ieeprom"))
+ {
+  while(Length--)
+  {
+   Address &= 0x7FF;
+   *Buffer = iEEPROM[Address];
+   Address++;
+   Buffer++;
+  }
+ }
  else if(!strcmp(name, "physical"))
  {
   while(Length--)
@@ -530,6 +560,36 @@ static void PutAddressSpaceBytes(const char *name, uint32 Address, uint32 Length
    if(Address >= 0xfe00)
     WSwan_GfxWSCPaletteRAMWrite(Address, *Buffer);
 
+   Address++;
+   Buffer++;
+  }
+ }
+ else if(!strcmp(name, "sram") && sram_size)
+ {
+  while(Length--)
+  {
+   Address &= sram_size - 1;
+   wsSRAM[Address] = *Buffer;
+   Address++;
+   Buffer++;
+  }
+ }
+ else if(!strcmp(name, "eeprom") && eeprom_size)
+ {
+  while(Length--)
+  {
+   Address &= eeprom_size - 1;
+   wsEEPROM[Address] = *Buffer;
+   Address++;
+   Buffer++;
+  }
+ }
+ else if(!strcmp(name, "ieeprom"))
+ {
+  while(Length--)
+  {
+   Address &= 0x7FF;
+   iEEPROM[Address] = *Buffer;
    Address++;
    Buffer++;
   }
@@ -752,18 +812,6 @@ void WSwan_MemoryInit(bool lang, bool IsWSC, uint32 ssize, bool IsWW_arg)
   wsRAMSize = 65536;
   sram_size = ssize;
 
-  #ifdef WANT_DEBUGGER
-  {
-   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "physical", "CPU Physical", 20);
-   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "ram", "RAM", (int)(log(wsRAMSize) / log(2)));
-
-   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "cs", "Code Segment", 16);
-   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "ss", "Stack Segment", 16);
-   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "ds", "Data Segment", 16);
-   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "es", "Extra Segment", 16);
-  }
-  #endif
-
   // WSwan_EEPROMInit() will also clear wsEEPROM
   WSwan_EEPROMInit(MDFN_GetSettingS("wswan.name").c_str(), byear, bmonth, bday, sex, blood);
 
@@ -777,6 +825,25 @@ void WSwan_MemoryInit(bool lang, bool IsWSC, uint32 ssize, bool IsWW_arg)
 
   if(sram_size)
    MDFNMP_AddRAM(sram_size, 0x10000, wsSRAM);
+
+  #ifdef WANT_DEBUGGER
+  {
+   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "physical", "CPU Physical", 20);
+   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "ram", "RAM", (int)(log(wsRAMSize) / log(2)));
+
+   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "cs", "Code Segment", 16);
+   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "ss", "Stack Segment", 16);
+   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "ds", "Data Segment", 16);
+   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "es", "Extra Segment", 16);
+
+   ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "ieeprom", "Internal EEPROM", 11);
+
+   if(sram_size)
+    ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "sram", "Cartridge SRAM", (int)(log(sram_size) / log(2)));
+   if(eeprom_size)
+    ASpace_Add(GetAddressSpaceBytes, PutAddressSpaceBytes, "eeprom", "Cartridge EEPROM", (int)(log(eeprom_size) / log(2)));
+  }
+  #endif
 
   if(IsWW)
    v30mz_init(WSwan_readmem20_WW, WSwan_writemem20_WW, WSwan_readport_WW, WSwan_writeport_WW);
