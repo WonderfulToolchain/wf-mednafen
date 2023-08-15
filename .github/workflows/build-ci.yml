@@ -1,6 +1,6 @@
 name: Build
 
-on: [push, pull_request, workflow_dispatch]
+on: [push, pull_request, release, workflow_dispatch]
 
 permissions:
   contents: read
@@ -18,15 +18,15 @@ jobs:
         run: sudo dnf -y install autoconf automake binutils cpp gcc make pkgconf pkgconf-m4 pkgconf-pkg-config zip unzip git mingw64-gcc mingw64-gcc-c++ mingw64-zlib mingw64-flac mingw64-SDL2 mingw64-win-iconv
       - uses: actions/checkout@v3
       - name: Configure
-        run: CPPFLAGS="-DUNICODE=1 -D_UNICODE=1" LDFLAGS="-fstack-protector -static-libstdc++" mednafen/configure --host=x86_64-w64-mingw32 --enable-threads=win32 --disable-alsa --disable-jack --disable-apple2 --disable-gb --disable-gba --disable-nes --disable-sasplay --disable-sms --disable-snes --disable-snes-faust --disable-ssfplay
+        run: CPPFLAGS="-DUNICODE=1 -D_UNICODE=1" LDFLAGS="-fstack-protector -static-libstdc++" mednafen/configure --host=x86_64-w64-mingw32 --enable-threads=win32 --disable-alsa --disable-jack --disable-apple2 --disable-gb --disable-gba --disable-nes --disable-sasplay --disable-sms --disable-snes --disable-snes-faust --disable-ssfplay --disable-nls --disable-fancy-scalers 
       - name: Build
         run: make -j$(nproc)
       - name: Package artifact
-        run: mkdir dist && cp src/mednafen.exe $SYSROOT/bin/SDL2.dll $SYSROOT/bin/iconv.dll $SYSROOT/bin/libFLAC-*.dll $SYSROOT/bin/libgcc* $SYSROOT/bin/libogg* $SYSROOT/bin/libssp* $SYSROOT/bin/libwinpthread* $SYSROOT/bin/zlib1.dll mednafen/COPYING dist/
+        run: mkdir dist && cp src/mednafen.exe $SYSROOT/bin/SDL2.dll $SYSROOT/bin/iconv.dll $SYSROOT/bin/libFLAC-*.dll $SYSROOT/bin/libgcc* $SYSROOT/bin/libogg* $SYSROOT/bin/libssp* $SYSROOT/bin/libwinpthread* $SYSROOT/bin/zlib1.dll mednafen/COPYING dist/ && x86_64-w64-mingw32-strip -s dist/mednafen.exe && mv dist/mednafen.exe dist/wf-mednafen.exe
       - name: Archive artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Mednafen (Windows)
+          name: wf-mednafen (Windows)
           path: dist/*
 
   # === Linux (Ubuntu 20.04) ===
@@ -41,9 +41,9 @@ jobs:
       - name: Build
         run: make -j$(nproc)
       - name: Package artifact
-        run: mkdir dist && cp src/mednafen mednafen/COPYING dist/
+        run: mkdir dist && cp src/mednafen mednafen/COPYING dist/ && strip -s dist/mednafen && mv dist/mednafen dist/wf-mednafen
       - name: Archive artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Mednafen (Linux)
+          name: wf-mednafen (Linux)
           path: dist/*
