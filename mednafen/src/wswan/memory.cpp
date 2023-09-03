@@ -251,35 +251,39 @@ void WSwan_CheckSoundDMA(void)
  if(!(SoundDMAControl & 0x80))
   return;
 
-
  if(!SoundDMATimer)
  {
-  uint8 zebyte = WSwan_readmem20(SoundDMASource);
+  uint8 zebyte = 0;
+  if(!(SoundDMAControl & 0x04))
+    zebyte = WSwan_readmem20(SoundDMASource);
 
   if(SoundDMAControl & 0x10)
    WSwan_SoundWrite(0x95, zebyte); // Pick a port, any port?!
   else
    WSwan_SoundWrite(0x89, zebyte);
 
-  if(SoundDMAControl & 0x40)
-   SoundDMASource--;
-  else
-   SoundDMASource++;
-  SoundDMASource &= 0x000FFFFF;
-
-  SoundDMALength--;
-  SoundDMALength &= 0x000FFFFF;
-  if(!SoundDMALength)
+  if(!(SoundDMAControl & 0x04))
   {
-   if(SoundDMAControl & 8)
-   {
-     SoundDMALength = SoundDMALengthSaved;
-     SoundDMASource = SoundDMASourceSaved;
-   }
-   else
-   {
-    SoundDMAControl &= ~0x80;
-   }
+    if(SoundDMAControl & 0x40)
+     SoundDMASource--;
+    else
+     SoundDMASource++;
+    SoundDMASource &= 0x000FFFFF;
+
+    SoundDMALength--;
+    SoundDMALength &= 0x000FFFFF;
+    if(!SoundDMALength)
+    {
+     if(SoundDMAControl & 0x08)
+     {
+       SoundDMALength = SoundDMALengthSaved;
+       SoundDMASource = SoundDMASourceSaved;
+     }
+     else
+     {
+      SoundDMAControl &= ~0x80;
+     }
+    }
   }
 
   switch(SoundDMAControl & 3)
@@ -392,16 +396,35 @@ static INLINE void WritePort(uint32 IOPort, uint8 V)
 		case 0x47: DMALength &= 0x00FF; DMALength |= (V << 8); break;
 
 		case 0x48: DMAControl = V & ~0x3F;
-			   ws_CheckDMA(); 
+			   ws_CheckDMA();
 			   break;
 
-                case 0x4a: SoundDMASource &= 0xFFFF00; SoundDMASource |= (V << 0); SoundDMASourceSaved = SoundDMASource; break;
-                case 0x4b: SoundDMASource &= 0xFF00FF; SoundDMASource |= (V << 8); SoundDMASourceSaved = SoundDMASource; break;
-                case 0x4c: SoundDMASource &= 0x00FFFF; SoundDMASource |= ((V & 0xF) << 16); SoundDMASourceSaved = SoundDMASource; break;
+                case 0x4a:
+                           SoundDMASource &= 0xFFFF00; SoundDMASource |= (V << 0);
+                           SoundDMASourceSaved &= 0xFFFF00; SoundDMASourceSaved |= (V << 0);
+                           break;
+                case 0x4b:
+                           SoundDMASource &= 0xFF00FF; SoundDMASource |= (V << 8);
+                           SoundDMASourceSaved &= 0xFF00FF; SoundDMASourceSaved |= (V << 8);
+                           break;
+                case 0x4c:
+                           SoundDMASource &= 0x00FFFF; SoundDMASource |= ((V & 0xF) << 16);
+                           SoundDMASourceSaved &= 0x00FFFF; SoundDMASourceSaved |= ((V & 0xF) << 16);
+                           break;
 
-                case 0x4e: SoundDMALength &= 0xFFFF00; SoundDMALength |= (V << 0); SoundDMALengthSaved = SoundDMALength; break;
-                case 0x4f: SoundDMALength &= 0xFF00FF; SoundDMALength |= (V << 8); SoundDMALengthSaved = SoundDMALength; break;
-                case 0x50: SoundDMALength &= 0x00FFFF; SoundDMALength |= ((V & 0xF) << 16); SoundDMALengthSaved = SoundDMALength; break;
+                case 0x4e:
+                           SoundDMALength &= 0xFFFF00; SoundDMALength |= (V << 0);
+                           SoundDMALengthSaved &= 0xFFFF00; SoundDMALengthSaved |= (V << 0);
+                           break;
+                case 0x4f:
+                           SoundDMALength &= 0xFF00FF; SoundDMALength |= (V << 8);
+                           SoundDMALengthSaved &= 0xFF00FF; SoundDMALengthSaved |= (V << 8);
+                           break;
+                case 0x50:
+                           SoundDMALength &= 0x00FFFF; SoundDMALength |= ((V & 0xF) << 16);
+                           SoundDMALengthSaved &= 0x00FFFF; SoundDMALengthSaved |= ((V & 0xF) << 16);
+                           break;
+
 		case 0x52: SoundDMAControl = V & ~0x20;
 			   break;
 
