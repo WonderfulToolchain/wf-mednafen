@@ -905,7 +905,7 @@ OP( 0xf6, i_f6pre ) { uint32 tmp; uint32 uresult,uresult2; int32 result,result2;
 	GetModRM; tmp = GetRMByte(ModRM);
     switch (ModRM & 0x38) {
 		case 0x00: tmp &= FETCH; I.CarryVal = I.OverVal = I.AuxVal=0; SetSZPF_Byte(tmp); CLKM(2,1); break; /* TEST */
-		case 0x08:  break;
+		case 0x08: CLKM(2, 1); break; /* undefined opcode */
  		case 0x10: PutbackRMByte(ModRM,~tmp); CLKM(3,1); break; /* NOT */
 		
 		case 0x18: I.CarryVal=(tmp!=0);tmp=(~tmp)+1; SetSZPF_Byte(tmp); PutbackRMByte(ModRM,tmp&0xff); CLKM(3,1); break; /* NEG */
@@ -920,7 +920,7 @@ OP( 0xf7, i_f7pre   ) { uint32 tmp,tmp2; uint32 uresult,uresult2; int32 result,r
 	GetModRM; tmp = GetRMWord(ModRM);
     switch (ModRM & 0x38) {
 		case 0x00: FETCHuint16(tmp2); tmp &= tmp2; I.CarryVal = I.OverVal = I.AuxVal=0; SetSZPF_Word(tmp); CLKM(2,1); break; /* TEST */
-		case 0x08: break;
+		case 0x08: CLKM(2, 1); break; /* undefined opcode */
  		case 0x10: PutbackRMWord(ModRM,~tmp); CLKM(3,1); break; /* NOT */
 		case 0x18: I.CarryVal=(tmp!=0); tmp=(~tmp)+1; SetSZPF_Word(tmp); PutbackRMWord(ModRM,tmp&0xffff); CLKM(3,1); break; /* NEG */
 		case 0x20: uresult = I.regs.w[AW]*tmp; I.regs.w[AW]=uresult&0xffff; I.regs.w[DW]=((uint32)uresult)>>16; I.CarryVal=I.OverVal=(I.regs.w[DW]!=0); CLKM(4,3); break; /* MULU */
@@ -940,7 +940,13 @@ OP( 0xfe, i_fepre ) { uint32 tmp, tmp1; GetModRM; tmp=GetRMByte(ModRM);
     switch(ModRM & 0x38) {
     	case 0x00: tmp1 = tmp+1; I.OverVal = (tmp==0x7f); SetAF(tmp1,tmp,1); SetSZPF_Byte(tmp1); PutbackRMByte(ModRM,(uint8)tmp1); CLKM(3,1); break; /* INC */
 		case 0x08: tmp1 = tmp-1; I.OverVal = (tmp==0x80); SetAF(tmp1,tmp,1); SetSZPF_Byte(tmp1); PutbackRMByte(ModRM,(uint8)tmp1); CLKM(3,1); break; /* DEC */
-	}
+
+		case 0x10: PUSH(I.pc);	I.pc = (uint16)tmp; ADDBRANCHTRACE(I.sregs[PS], I.pc); CLKM(6,5); break; /* CALL */
+		case 0x18: tmp1 = I.sregs[PS]; I.sregs[PS] = GetnextRMWord; PUSH(tmp1); PUSH(I.pc); I.pc = tmp; ADDBRANCHTRACE(I.sregs[PS], I.pc); CLKM(12,1); break; /* CALL FAR */
+		case 0x20: I.pc = tmp; ADDBRANCHTRACE(I.sregs[PS], I.pc); CLKM(5,4); break; /* JMP */
+		case 0x28: I.pc = tmp; I.sregs[PS] = GetnextRMWord; ADDBRANCHTRACE(I.sregs[PS], I.pc); CLKM(10,1); break; /* JMP FAR */
+		case 0x30: PUSH(tmp); CLKM(2,1); break;
+		case 0x38: CLKM(3,1); break; /* undefined opcode */	}
 } OP_EPILOGUE;
 
 OP( 0xff, i_ffpre ) { uint32 tmp, tmp1; GetModRM; tmp=GetRMWord(ModRM);
@@ -952,6 +958,7 @@ OP( 0xff, i_ffpre ) { uint32 tmp, tmp1; GetModRM; tmp=GetRMWord(ModRM);
 		case 0x20: I.pc = tmp; ADDBRANCHTRACE(I.sregs[PS], I.pc); CLKM(5,4); break; /* JMP */
 		case 0x28: I.pc = tmp; I.sregs[PS] = GetnextRMWord; ADDBRANCHTRACE(I.sregs[PS], I.pc); CLKM(10,1); break; /* JMP FAR */
 		case 0x30: PUSH(tmp); CLKM(2,1); break;
+		case 0x38: CLKM(3,1); break; /* undefined opcode */
 	}
 } OP_EPILOGUE;
 } // End switch statement
