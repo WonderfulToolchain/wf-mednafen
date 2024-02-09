@@ -648,7 +648,7 @@ static void wsScanline(MDFN_Surface* surface)
 	uint8		b_bg_pal[256];
 
 	if(!wsIsColor())
-		memset(b_bg, wsColors[BGColor&0xF]&0xF, 256);
+		memset(b_bg, wsColors[BGColor&0x7]&0xF, 256);
 	else
 	{
 		memset(&b_bg[0], BGColor & 0xF, 256);
