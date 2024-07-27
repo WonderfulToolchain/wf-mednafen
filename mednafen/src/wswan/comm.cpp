@@ -26,6 +26,14 @@
 #include <signal.h>
 #endif
 
+// #define WS_COMM_DEBUG
+
+#ifdef WS_COMM_DEBUG
+#define Comm_debug_printf printf
+#else
+#define Comm_debug_printf(...)
+#endif
+
 namespace MDFN_IEN_WSWAN
 {
 
@@ -118,31 +126,35 @@ void Comm_Reset(void)
 
 void Comm_Process(void)
 {
- if(SendLatched && (Control & 0x80))
+ if (!(Control & 0x80))
+  return;
+
+ if(SendLatched)
  {
   if(stdin_pipes[1] != -1)
   {
    if(write(stdin_pipes[1], &SendBuf, 1) == 1)
    {
-    //printf("SENT: %02x %d\n", SendBuf, RecvLatched);
+    Comm_debug_printf("SENT: %02x %d\n", SendBuf, RecvLatched);
     SendLatched = false;
     WSwan_Interrupt(WSINT_SERIAL_SEND);
    }
   }
   else
   {
-   //printf("DummySend: %02x %d\n", SendBuf, RecvLatched);
+   Comm_debug_printf("DummySend: %02x %d\n", SendBuf, RecvLatched);
    SendLatched = false;
    WSwan_Interrupt(WSINT_SERIAL_SEND);
   }
  }
- else if(!RecvLatched && (Control & 0x20))
+
+ if(!RecvLatched)
  {
   if(stdout_pipes[0] != -1)
   {
    if(read(stdout_pipes[0], &RecvBuf, 1) == 1)
    {
-    //printf("RECEIVED: %02x\n", RecvBuf);
+    Comm_debug_printf("RECEIVED: %02x\n", RecvBuf);
     RecvLatched = true;
     WSwan_InterruptAssert(WSINT_SERIAL_RECV, RecvLatched);
    }
@@ -152,7 +164,7 @@ void Comm_Process(void)
 
 uint8 Comm_Read(uint8 A)
 {
- //printf("Read: %02x\n", A);
+ printf("Read: %02x\n", A);
 
  if(A == 0xB1)
  {
@@ -166,13 +178,15 @@ uint8 Comm_Read(uint8 A)
  }
  else if(A == 0xB3)
  {
-  uint8 ret = Control & 0xF0;
+  uint8 ret = Control & 0xC2;
 
-  if((Control & 0x80) && !SendLatched)
-   ret |= 0x4;
-
-  if((Control & 0x20) && RecvLatched)
-   ret |= 0x1;
+  if(Control & 0x80)
+  {
+   if (!SendLatched)
+    ret |= 0x4;
+   if (RecvLatched)
+    ret |= 0x1;
+  }
 
   return(ret);
  }
@@ -182,7 +196,7 @@ uint8 Comm_Read(uint8 A)
 
 void Comm_Write(uint8 A, uint8 V)
 {
- //printf("Write: %02x %02x\n", A, V);
+ Comm_debug_printf("Write: %02x %02x\n", A, V);
 
  if(A == 0xB1)
  {
@@ -194,7 +208,12 @@ void Comm_Write(uint8 A, uint8 V)
  }
  else if(A == 0xB3)
  {
-  Control = V & 0xF0;
+  Control = (Control & 0x07) | (V & 0xC0);
+
+  if(V & 0x20)
+  {
+    Control &= ~0x02;
+  }
  }
 }
 
@@ -222,7 +241,7 @@ void Comm_StateAction(StateMem *sm, const unsigned load, const bool data_only)
   RecvLatched = false;
 
   Control = 0x00;
- } 
+ }
  else
  {
   MDFNSS_StateAction(sm, load, data_only, StateRegs, "COMM");
