@@ -395,7 +395,7 @@ void WSwanDBG_ToggleSyntax(void)
 
 static const RegType V30MZ_Regs[] =
 {
- { 0, 0, "---CPU---", "", 0xFFFF },
+// The debugger is hardcoded to use the first entry in the register array as IP.
  { NEC_PC,      3,      "IP", "Instruction Pointer", 2 },
  { NEC_FLAGS,   2,      "PSW", "Program Status Word", 2 },
  { 0, 0, "---REG---", "", 0xFFFF },
