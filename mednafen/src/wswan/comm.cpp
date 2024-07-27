@@ -164,7 +164,7 @@ void Comm_Process(void)
 
 uint8 Comm_Read(uint8 A)
 {
- printf("Read: %02x\n", A);
+ Comm_debug_printf("Read: %02x\n", A);
 
  if(A == 0xB1)
  {
