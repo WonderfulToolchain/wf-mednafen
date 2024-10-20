@@ -442,10 +442,11 @@ static const RegGroupType V30MZRegsGroup =
 static const RegType MiscRegs[] =
 {
  { 0, 0, "------BNK------", "", 0xFFFF },
- { MEMORY_GSREG_BNK1SLCT,               3,      "Bnk1Select",   "???", 1 },
+ { MEMORY_GSREG_BNK1SLCT,               3,      "Bnk1Select",   "SRAM Bank Selector for 64KiB bank 0x1", 1 },
  { MEMORY_GSREG_BNK2SLCT,               3,      "Bnk2Select",   "ROM Bank Selector for 64KiB bank 0x2", 1 },
  { MEMORY_GSREG_BNK3SLCT,               3,      "Bnk3Select",   "ROM Bank Selector for 64KiB bank 0x3", 1 },
  { MEMORY_GSREG_ROMBBSLCT,              3,      "RomBSelect",   "ROM Bank Base Selector for 64KiB banks 0x4-0xF", 1 },
+ { MEMORY_GSREG_FLASHSLCT,              3,      "FlashSlect",   "SRAM/Flash Bank Toggle", 1 },
 
  { 0, 0, "------IRQ------", "", 0xFFFF },
  { 0x8000 | INT_GSREG_IASSERTED,        4,      "IrqAssert",    "Interrupt Asserted", 1 },

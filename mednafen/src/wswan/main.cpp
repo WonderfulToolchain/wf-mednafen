@@ -289,7 +289,11 @@ static void Load(GameFile* gf)
   {
    IsWSR = false;
 
-   if(rom_size == 524288 && !memcmp(&wsCartROM[0x70000], "ELISA", 5) && crc32(0, &wsCartROM[0x7FFF0], 0x10) == 0x0d05ed64)
+   if(rom_size == 0x80000 && !memcmp(&wsCartROM[0x70000], "ELISA", 5)
+     && wsCartROM[0x7fff6] == 0x00  // Publisher ID
+     && wsCartROM[0x7fff8] == 0x00  // Game ID
+     && wsCartROM[0x7fffb] == 0x04  // Save format
+     && wsCartROM[0x7fffd] == 0x01) // Mapper
    {
     uint32 crc32_sans_l64k = crc32(0, wsCartROM, 0x70000);
     uint32 bl[] = { 0x63f00316, 0x60fd569b, 0xe11538f8 };
@@ -310,7 +314,7 @@ static void Load(GameFile* gf)
    }
   }
 
-  MDFN_printf(_("ROM:       %uKiB\n"), real_rom_size / 1024);
+  MDFN_printf(_("%s     %uKiB\n"), IsWW ? "FLASH:" : "ROM:  ", real_rom_size / 1024);
   md5_context md5;
   md5.starts();
   md5.update(wsCartROM, rom_size);

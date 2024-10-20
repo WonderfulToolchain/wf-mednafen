@@ -103,10 +103,8 @@ static INLINE void WriteMem(uint32 A, uint8 V)
  { 
   //if((offset | (BankSelector[1] << 16)) >= 0x38000)
   // printf("%08x\n", offset | (BankSelector[1] << 16));
-  if(WW && (BankSelector[1] & 0x08))
+  if(WW && WW_FlashLock)
   {
-   if(WW_FlashLock != 0x00)
-   {
     uint32 rom_addr = offset | (BankSelector[1] << 16);
 
     //printf("Write: %08x %02x\n", rom_addr, V);
@@ -153,7 +151,6 @@ static INLINE void WriteMem(uint32 A, uint8 V)
 	if(V == 0xF0)
 	 WW_FWSM = WW_FWSM_READ;	
 	break;
-    }
    }
   }
   else if(sram_size)
@@ -184,7 +181,7 @@ static INLINE uint8 ReadMem(uint32 A)
  {
 	case 0:  return wsRAM[offset];
 
-	case 1:  if(WW && (BankSelector[1] & 0x08))
+	case 1:  if(WW && WW_FlashLock)
 		 {
 		  uint32 rom_addr = (offset | (BankSelector[1] << 16));
 		  uint8 ret = wsCartROM[rom_addr & 524287];
@@ -455,7 +452,7 @@ static INLINE void WritePort(uint32 IOPort, uint8 V)
  }
 
  if(WW && IOPort == 0xCE)
-  WW_FlashLock = V;
+  WW_FlashLock = V & 0x01;
 }
 
 MDFN_FASTCALL void WSwan_writemem20(uint32 A, uint8 V)
@@ -636,7 +633,7 @@ static void PutAddressSpaceBytes(const char *name, uint32 Address, uint32 Length
 	      WSwan_GfxWSCPaletteRAMWrite(offset & (wsRAMSize - 1), *Buffer);
 	     break;
     case 1:  
-	     if(IsWW && (BankSelector[1] & 0x08))
+	     if(IsWW && WW_FlashLock)
 	     {
 	      uint32 rom_addr = (offset | (BankSelector[1] << 16));
 	      wsCartROM[rom_addr & 524287] = *Buffer;
@@ -707,6 +704,10 @@ uint32 WSwan_MemoryGetRegister(const unsigned int id, char *special, const uint3
   case MEMORY_GSREG_BNK3SLCT:
         ret = BankSelector[3];
         break;
+
+  case MEMORY_GSREG_FLASHSLCT:
+        ret = WW_FlashLock;
+        break;
  }
 
  return(ret);
@@ -731,6 +732,10 @@ void WSwan_MemorySetRegister(const unsigned int id, uint32 value)
   case MEMORY_GSREG_BNK3SLCT:
 	BankSelector[3] = value;
 	break;
+
+  case MEMORY_GSREG_FLASHSLCT:
+        WW_FlashLock = value;
+        break;
  }
 }
 
