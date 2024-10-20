@@ -543,7 +543,7 @@ static void GetAddressSpaceBytes(const char *name, uint32 Address, uint32 Length
   while(Length--)
   {
    Address &= 0xFFFFF;
-   *Buffer = WSwan_readmem20(Address);
+   *Buffer = IsWW ? WSwan_readmem20_WW(Address) : WSwan_readmem20(Address);
    Address++;
    Buffer++;
   }
